@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server'
+
 async function askGitBook(query) {
     const url = 'https://api.gitbook.com/v1/spaces/YnSBe0nmmzamovXnS2Yv/ask'
     const options = {
@@ -19,17 +21,17 @@ async function askGitBook(query) {
     }
 }
 
-export default async function handler(req, res) {
+export default async function GET(req) {
     console.log(req.body)
     const message = req.body.message ?? {}
     if (!message?.author?.bot && message.content.startsWith('?ask')) {
         const query = message.content.slice(5).trim()
         try {
             const answer = await askGitBook(query)
-            message.reply(answer)
+            return NextResponse.json({ answer }, { status: 200 })
         } catch (error) {
-            message.reply('Sorry, there was an error processing your request.')
-            console.error(error)
+            console.error({ error })
+            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
         }
     }
 }
