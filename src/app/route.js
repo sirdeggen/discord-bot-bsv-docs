@@ -21,7 +21,7 @@ async function askGitBook(query) {
     }
 }
 
-export default async function POST(req) {
+export async function POST(req) {
     console.log(req.body)
     const message = req.body.message ?? {}
     if (!message?.author?.bot && message.content.startsWith('?ask')) {
