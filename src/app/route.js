@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 async function askGitBook(query) {
-    const url = 'https://api.gitbook.com/v1/spaces/YnSBe0nmmzamovXnS2Yv/ask'
+    const url = `https://api.gitbook.com/v1/spaces/${process.env.GITBOOK_SPACES_ID}/search/ask`
     const options = {
         method: 'POST',
         headers: {
@@ -14,7 +14,8 @@ async function askGitBook(query) {
     try {
         const response = await fetch(url, options)
         const data = await response.json()
-        return data.answer || 'No answer found.'
+        console.log({ data })
+        return data?.answer?.text || false
     } catch (error) {
         console.error('Error contacting GitBook API:', error)
         return 'Error retrieving answer.'
@@ -22,16 +23,15 @@ async function askGitBook(query) {
 }
 
 export async function POST(req) {
-    console.log(req.body)
-    const message = req.body.message ?? {}
-    if (!message?.author?.bot && message.content.startsWith('?ask')) {
+    try {
+        const body = await req.json()
+        const message = body.message ?? {}
         const query = message.content.slice(5).trim()
-        try {
-            const answer = await askGitBook(query)
-            return NextResponse.json({ answer }, { status: 200 })
-        } catch (error) {
-            console.error({ error })
-            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-        }
+        const answer = await askGitBook(query)
+        if (!answer) return NextResponse.json({ error: `Sorry, I'm not sure.` }, { status: 200 }) 
+        return NextResponse.json({ answer }, { status: 200 })
+    } catch (error) {
+        console.error({ error })
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
     }
 }
