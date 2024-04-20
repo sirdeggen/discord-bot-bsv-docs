@@ -51,6 +51,8 @@ export async function POST(req) {
         // Verify the request
         verifySignature(rawBody)
 
+        console.log({ body })
+
         if (body?.type ===  1) return NextResponse.json({ type: 1 }, { status: 200 })
 
         const message = body.message ?? {}
