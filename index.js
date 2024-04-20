@@ -1,19 +1,20 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const { verifyKey } = require('discord-interactions')
+const env = require('dotenv').config()
 
 const app = express()
-const port = process.env.PORT || 3000
+const port = 3000
 
 app.use(bodyParser.json())
 
 async function askGitBook(query) {
-    const url = `https://api.gitbook.com/v1/spaces/${process.env.GITBOOK_SPACES_ID}/search/ask`
+    const url = `https://api.gitbook.com/v1/spaces/${env.GITBOOK_SPACES_ID}/search/ask`
     const options = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.GITBOOK_API_KEY}`,
+            Authorization: `Bearer ${env.GITBOOK_API_KEY}`,
         },
         body: JSON.stringify({ query }),
     }
@@ -30,12 +31,12 @@ async function askGitBook(query) {
 }
 
 async function sendFollowUpMessage(token, content) {
-    const url = `https://discord.com/api/webhooks/${process.env.DISCORD_APP_ID}/${token}/messages/@original`
+    const url = `https://discord.com/api/webhooks/${env.DISCORD_APP_ID}/${token}/messages/@original`
     const options = {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bot ${process.env.TOKEN}`,
+            Authorization: `Bot ${env.TOKEN}`,
         },
         body: JSON.stringify({ content }),
     }
@@ -52,7 +53,7 @@ async function sendFollowUpMessage(token, content) {
 
 app.post('/', async (req, res) => {
     try {
-        const publicKey = process.env.PUBLIC_KEY
+        const publicKey = env.PUBLIC_KEY
         const signature = req.get('X-Signature-Ed25519')
         const timestamp = req.get('X-Signature-Timestamp')
         const rawBody = JSON.stringify(req.body)
