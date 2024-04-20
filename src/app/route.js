@@ -68,7 +68,7 @@ export async function POST(req) {
     const body = JSON.parse(rawBody)
 
     // Verify the request
-    // verifySignature(rawBody)
+    verifySignature(rawBody)
 
     console.dir({ body }, { depth: null})
 
