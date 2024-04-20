@@ -49,7 +49,7 @@ export async function POST(req) {
         const body = JSON.parse(rawBody)
 
         // Verify the request
-        verifySignature(rawBody)
+        // verifySignature(rawBody)
 
         console.dir({ body }, { depth: null})
 
@@ -70,10 +70,10 @@ export async function POST(req) {
         return NextResponse.json({
             type: 3, // Corresponds to 'MESSAGE_NO_SOURCE'
             data: {
-                tts: false,
+                // tts: false,
                 content: answer,
-                embeds: [],
-                allowed_mentions: {}
+                // embeds: [],
+                // allowed_mentions: {}
             }
         }, {status: 200})
     } catch (error) {
