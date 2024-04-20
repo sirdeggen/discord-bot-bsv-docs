@@ -1,6 +1,5 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const fetch = require('node-fetch')
 const { verifyKey } = require('discord-interactions')
 
 const app = express()
