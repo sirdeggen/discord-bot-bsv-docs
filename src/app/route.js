@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import nacl from 'tweetnacl'
 
 async function askGitBook(query) {
@@ -24,9 +25,12 @@ async function askGitBook(query) {
 }
 
 function verifySignature(req) {
+    const h = headers()
     const publicKey = process.env.PUBLIC_KEY
-    const signature = req.headers['x-signature-ed25519'];
-    const timestamp = req.headers['x-signature-timestamp'];
+    const signature = h.get('x-signature-ed25519')
+    const timestamp = h.get('x-signature-timestamp')
+
+    console.log({ publicKey, signature, timestamp })
 
     if (!signature || !timestamp) {
         throw new Error('Missing headers');
@@ -34,9 +38,8 @@ function verifySignature(req) {
 
     const message = Buffer.from(timestamp + JSON.stringify(req.body));
     const sigBuffer = Buffer.from(signature, 'hex');
-    const key = nacl.signing.VerifyKey.fromPublicKey(Buffer.from(publicKey, 'hex'));
 
-    const isValid = key.verify(message, sigBuffer);
+    const isValid = nacl.sign.detached.verify(message, sigBuffer, Buffer.from(publicKey, 'hex'))
 
     if (!isValid) {
         throw new Error('Invalid signature');
@@ -78,6 +81,6 @@ export async function POST(req) {
         }, {status: 200})
     } catch (error) {
         console.error({ error })
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+        return NextResponse.json({ error: error.message ?? 'Internal Server Error' }, { status: 500 })
     }
 }
