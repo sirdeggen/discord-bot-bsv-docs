@@ -2,28 +2,6 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { verifyKey } from 'discord-interactions'
 
-async function askGitBook(query) {
-    const url = `https://api.gitbook.com/v1/spaces/${process.env.GITBOOK_SPACES_ID}/search/ask`
-    const options = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.GITBOOK_API_KEY}`,
-        },
-        body: JSON.stringify({ query }),
-    }
-
-    try {
-        const response = await fetch(url, options)
-        const data = await response.json()
-        console.log({ data })
-        return data?.answer?.text || false
-    } catch (error) {
-        console.error('Error contacting GitBook API:', error)
-        return 'Error retrieving answer.'
-    }
-}
-
 function verifySignature(rawBody) {
     const h = headers()
     const publicKey = process.env.PUBLIC_KEY
@@ -55,25 +33,23 @@ export async function POST(req) {
 
         if (body?.type ===  1) return NextResponse.json({ type: 1 }, { status: 200 })
 
-        const query = body.data.options[0].value
-        const answer = await askGitBook(query)
-        if (!answer) return NextResponse.json({
-            type: 4,
-            data: {
-                tts: false,
-                content: `Sorry, I'm not sure.`,
-                embeds: [],
-                allowed_mentions: {}
-            }
-        }, {status: 200})
+        if (body?.type === 2) {
+            fetch('https://discord-bot-bsv-docs.vercel.app/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${process.env.TOKEN}`,
+                },
+                body: JSON.stringify({ question: body.data.options[0].value, token: body.token }),
+            })
+            return NextResponse.json({ type: 5 }, { status: 200 })
+        }
 
-        return NextResponse.json({
-            type: 4,
+        return NextResponse.json({ 
+            type: 4, 
             data: {
-                tts: false,
-                content: answer,
-                embeds: [],
-                allowed_mentions: {}
+                "tts": false,
+                "content": "Sorry I'm having trouble finding an answer for that.",
             }
         }, { status: 200 })
     } catch (error) {
