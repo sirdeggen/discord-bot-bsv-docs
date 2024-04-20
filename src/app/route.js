@@ -51,12 +51,11 @@ export async function POST(req) {
         // Verify the request
         verifySignature(rawBody)
 
-        console.log({ body })
+        console.dir({ body }, { depth: null})
 
         if (body?.type ===  1) return NextResponse.json({ type: 1 }, { status: 200 })
 
-        const message = body.message ?? {}
-        const query = message.content.slice(5).trim()
+        const query = body.data.options[0].value
         const answer = await askGitBook(query)
         if (!answer) return NextResponse.json({
             type: 3, // Corresponds to 'MESSAGE_NO_SOURCE'
