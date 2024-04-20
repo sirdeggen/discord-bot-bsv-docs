@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import nacl from 'tweetnacl'
+import { verifyKey } from 'discord-interactions'
 
 async function askGitBook(query) {
     const url = `https://api.gitbook.com/v1/spaces/${process.env.GITBOOK_SPACES_ID}/search/ask`
@@ -24,11 +24,11 @@ async function askGitBook(query) {
     }
 }
 
-function verifySignature(req) {
+function verifySignature(rawBody) {
     const h = headers()
     const publicKey = process.env.PUBLIC_KEY
-    const signature = h.get('x-signature-ed25519')
-    const timestamp = h.get('x-signature-timestamp')
+    const signature = h.get('X-Signature-Ed25519')
+    const timestamp = h.get('X-Signature-Timestamp')
 
     console.log({ publicKey, signature, timestamp })
 
@@ -36,10 +36,7 @@ function verifySignature(req) {
         throw new Error('Missing headers');
     }
 
-    const message = Buffer.from(timestamp + JSON.stringify(req.body));
-    const sigBuffer = Buffer.from(signature, 'hex');
-
-    const isValid = nacl.sign.detached.verify(message, sigBuffer, Buffer.from(publicKey, 'hex'))
+    const isValid = verifyKey(rawBody, signature, timestamp, publicKey)
 
     if (!isValid) {
         throw new Error('Invalid signature');
@@ -48,12 +45,11 @@ function verifySignature(req) {
 
 export async function POST(req) {
     try {
-        const body = await req.json()
-
-        console.log({ body })
+        const rawBody = await req.text()
+        const body = JSON.parse(rawBody)
 
         // Verify the request
-        verifySignature(req)
+        verifySignature(rawBody)
 
         if (body?.type ===  1) return NextResponse.json({ type: 1 }, { status: 200 })
 
