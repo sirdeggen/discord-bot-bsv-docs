@@ -43,41 +43,52 @@ function verifySignature(rawBody) {
     }
 }
 
-export async function POST(req) {
+async function sendFollowUpMessage(token, content) {
+    const url = `https://discord.com/api/v9/webhooks/${process.env.DISCORD_APP_ID}/${token}/messages/@original`
+    const options = {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bot ${process.env.BOT_TOKEN}`,
+        },
+        body: JSON.stringify({ content }),
+    }
+
     try {
-        const rawBody = await req.text()
-        const body = JSON.parse(rawBody)
+        const response = await fetch(url, options)
+        const data = await response.json()
+        console.log({ data })
+    } catch (error) {
+        console.error('Error sending follow-up message:', error)
+    }
+}
 
-        // Verify the request
-        // verifySignature(rawBody)
+export async function POST(req) {
+    const rawBody = await req.text()
+    const body = JSON.parse(rawBody)
 
-        console.dir({ body }, { depth: null})
+    // Verify the request
+    // verifySignature(rawBody)
 
-        if (body?.type ===  1) return NextResponse.json({ type: 1 }, { status: 200 })
+    console.dir({ body }, { depth: null})
 
-        const query = body.data.options[0].value
-        const answer = await askGitBook(query)
-        if (!answer) return NextResponse.json({
-            type: 3, // Corresponds to 'MESSAGE_NO_SOURCE'
-            data: {
-                tts: false,
-                content: `Sorry, I'm not sure.`,
-                embeds: [],
-                allowed_mentions: {}
-            }
-        }, {status: 200})
+    // ping
+    if (body?.type ===  1) return NextResponse.json({ type: 1 }, { status: 200 })
 
-        return NextResponse.json({
-            type: 3, // Corresponds to 'MESSAGE_NO_SOURCE'
-            data: {
-                // tts: false,
-                content: answer,
-                // embeds: [],
-                // allowed_mentions: {}
-            }
-        }, {status: 200})
+    if (body?.type === 2) {
+        // Send an immediate response to Discord to acknowledge the interaction
+        NextResponse.json({ type: 5 }) // Defer the response
+    }
+
+    try {
+        // Process the request in the background
+        const query = body.data.options[0].value;
+        const answer = await askGitBook(query);
+        
+        // Use a method to handle follow-up message
+        await sendFollowUpMessage(body.token, answer || "Sorry, I'm not sure.");
     } catch (error) {
         console.error({ error })
-        return NextResponse.json({ error: error.message ?? 'Internal Server Error' }, { status: 500 })
     }
+    return NextResponse.json(null, { status: 200 })
 }
