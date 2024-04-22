@@ -30,7 +30,7 @@ async function askGitBook(query) {
     }
 }
 
-async function sendFollowUpMessage(token, content) {
+async function sendFollowUpMessage(question, token, content) {
     const url = `https://discord.com/api/webhooks/${env.parsed.DISCORD_APP_ID}/${token}/messages/@original`
     const options = {
         method: 'PATCH',
@@ -38,7 +38,7 @@ async function sendFollowUpMessage(token, content) {
             'Content-Type': 'application/json',
             Authorization: `Bot ${env.parsed.TOKEN}`,
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: question + '\n\n' + content }),
     }
 
     try {
@@ -74,8 +74,9 @@ app.post('/', async (req, res) => {
 
         if (req.body?.type === 2) {
             res.status(200).json({ type: 5 })
-            const answer = await askGitBook(req.body.data.options[0].value)
-            await sendFollowUpMessage(req.body.token, answer || 'Sorry, I\'m not sure.')
+            const question = req.body.data.options[0].value
+            const answer = await askGitBook(question)
+            await sendFollowUpMessage(question, req.body.token, answer || 'Sorry, I\'m not sure.')
             return
         }
         res.status(200).json({})
